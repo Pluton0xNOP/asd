@@ -16,7 +16,7 @@ GPIO.output(RELAY_PIN, GPIO.HIGH)
 GPIO.output(EMISOR_PIN, GPIO.LOW)
 
 def activar_rele():
-    print("Esperando 4 segundos antes de activar el relé")
+    print("Esperando 4 segundos antes de activar el rele")
     time.sleep(4)
     print("Activando relé por 1 segundo")
     GPIO.output(RELAY_PIN, GPIO.LOW)
