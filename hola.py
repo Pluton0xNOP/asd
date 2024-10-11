@@ -9,7 +9,7 @@ RECEPTOR_PIN = 24
 
 IP_SERVIDOR = '192.168.101.30'
 PUERTO_SERVIDOR = 12345
-MENSAJE = "linea6"
+MENSAJE = "iniciar_deteccion"
 
 # Configuración inicial de GPIO
 GPIO.setmode(GPIO.BCM)
@@ -28,6 +28,18 @@ def enviar_mensaje_persistente(cliente_socket, mensaje):
     except Exception as e:
         print(f"Error al enviar el mensaje: {e}")
 
+def conectar_servidor():
+    """Intenta conectarse al servidor, reintentando en caso de fallo."""
+    while True:
+        try:
+            cliente_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            cliente_socket.connect((IP_SERVIDOR, PUERTO_SERVIDOR))
+            print("Conexión establecida con el servidor.")
+            return cliente_socket
+        except Exception as e:
+            print(f"No se pudo establecer la conexión con el servidor: {e}. Reintentando en 5 segundos...")
+            time.sleep(5)
+
 def activar_rele():
     """Activa el relé durante 1 segundo después de esperar 4 segundos."""
     print("Esperando 4 segundos antes de activar el relé")
@@ -38,45 +50,28 @@ def activar_rele():
     print("Desactivando relé")
     GPIO.output(RELAY_PIN, GPIO.HIGH)
 
-# Crear una conexión persistente
-cliente_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Conectar al servidor
+cliente_socket = conectar_servidor()
+
 try:
-    cliente_socket.connect((IP_SERVIDOR, PUERTO_SERVIDOR))
-    print("Conexión establecida con el servidor.")
-
+    print("Iniciando el bucle principal del script")
     while True:
-        try:
-            # Reiniciar los pines a su estado inicial
-            GPIO.output(RELAY_PIN, GPIO.HIGH)
-            GPIO.output(EMISOR_PIN, GPIO.LOW)
+        GPIO.output(EMISOR_PIN, GPIO.HIGH)  # Indicador de que está en espera
 
-            print("Iniciando el bucle principal del script")
-            while True:
-                # Activar el emisor
-                GPIO.output(EMISOR_PIN, GPIO.HIGH)
+        # Verificar si se detecta contacto en el pin de receptor
+        if GPIO.input(RECEPTOR_PIN) == GPIO.HIGH:
+            print("Contacto detectado, enviando mensaje al servidor para iniciar la detección")
+            enviar_mensaje_persistente(cliente_socket, MENSAJE)
+            activar_rele()  # Llamar a la función para activar el relé
+            # Esperar un breve período antes de volver a verificar
+            time.sleep(2)
+        else:
+            print("Esperando contacto...")
 
-                # Comprobar si el receptor detecta un contacto de manera constante
-                if GPIO.input(RECEPTOR_PIN) == GPIO.HIGH:
-                    # Esperar un breve momento para evitar falsos positivos
-                    time.sleep(0.05)
-                    # Verificar nuevamente si el estado sigue siendo alto
-                    if GPIO.input(RECEPTOR_PIN) == GPIO.HIGH:
-                        print("Contacto detectado, enviando mensaje y activando temporizador")
-                        enviar_mensaje_persistente(cliente_socket, MENSAJE)  # Enviar el mensaje primero
-                        activar_rele()  # Luego activar el relé
-                else:
-                    print("Esperando contacto....")
+        time.sleep(0.1)  # Esperar brevemente antes de la siguiente lectura
 
-                # Reducir el tiempo de espera para detectar más rápidamente
-                time.sleep(0.1)
-
-        except Exception as e:
-            print(f"Error detectado: {e}. Reiniciando el bucle...")
-            cliente_socket.close()
-            break
-
-except Exception as e:
-    print(f"No se pudo establecer la conexión inicial con el servidor: {e}")
+except KeyboardInterrupt:
+    print("Interrupción del programa. Limpiando configuración GPIO.")
 finally:
     cliente_socket.close()
     GPIO.cleanup()
