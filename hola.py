@@ -5,11 +5,12 @@ def ping_equipo(ip_address, packet_size):
         # Comando para Windows
         command = ["ping", ip_address, "-l", str(packet_size), "-n", "1"]
 
-        # Comando para Unix/Linux/Mac
-        # command = ["ping", "-s", str(packet_size), "-c", "1", ip_address]
-
         # Ejecutar el comando de ping
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        # Mostrar la salida para depuración
+        print("Salida del comando:", result.stdout)
+        print("Error del comando:", result.stderr)
 
         # Verificar el resultado del ping
         if "Tiempo de espera agotado" in result.stdout or "Request timed out" in result.stdout:
@@ -23,7 +24,7 @@ def ping_equipo(ip_address, packet_size):
 
 # Dirección IP y tamaño del paquete
 ip_address = "192.168.101.30"
-packet_size = 64  # Puedes ajustar el tamaño del paquete
+packet_size = 64  # Ajusta el tamaño del paquete
 
 # Ejecutar la función de ping
 ping_equipo(ip_address, packet_size)
