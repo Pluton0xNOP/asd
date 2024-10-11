@@ -65,7 +65,7 @@ try:
                         enviar_mensaje_persistente(cliente_socket, MENSAJE)  # Enviar el mensaje primero
                         activar_rele()  # Luego activar el relé
                 else:
-                    print("Esperando contacto...")
+                    print("Esperando contacto....")
 
                 # Reducir el tiempo de espera para detectar más rápidamente
                 time.sleep(0.1)
