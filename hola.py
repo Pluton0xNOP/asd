@@ -62,7 +62,7 @@ try:
         if GPIO.input(RECEPTOR_PIN) == GPIO.HIGH:
             print("Contacto detectado, enviando mensaje al servidor para iniciar la detección")
             enviar_mensaje_persistente(cliente_socket, MENSAJE)
-            activar_rele()  # Llamar a la función para activar el relé
+            activar_rele()  # Llamar a la función para activar el relée
             # Esperar un breve período antes de volver a verificar
             time.sleep(2)
         else:
