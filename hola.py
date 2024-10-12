@@ -16,7 +16,7 @@ GPIO.output(RELAY_PIN, GPIO.HIGH)
 GPIO.output(EMISOR_PIN, GPIO.LOW)
 
 def activar_rele():
-    print("Esperando 4 segundos antes de activar el rele")
+    print("Esperando 4 segundos antes de activar el relé")
     time.sleep(4)
     print("Activando relé por 1 segundo")
     GPIO.output(RELAY_PIN, GPIO.LOW)
@@ -27,7 +27,7 @@ def activar_rele():
 def enviar_get_request():
     try:
         # URL del archivo PHP
-        url = 'http://localhost/linea6/linea6.php?status=true'  # Reemplaza con la URL correcta
+        url = 'http://192.168.101.30/linea6/linea6.php?status=true'  # Reemplaza con la URL correcta
         response = requests.get(url)
         if response.status_code == 200:
             print("Solicitud GET exitosa")
