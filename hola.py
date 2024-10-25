@@ -1,63 +1,85 @@
 import RPi.GPIO as GPIO
 import time
-import requests
+import socket
+import threading
 
-# Pines GPIO
-RELAY_PIN = 10
-EMISOR_PIN = 23
-RECEPTOR_PIN = 24
+RELAY1_PIN = 16
+EMISOR1_PIN = 19
+RECEPTOR1_PIN = 26
+
+RELAY2_PIN = 12
+EMISOR2_PIN = 20
+RECEPTOR2_PIN = 21
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(RELAY_PIN, GPIO.OUT)
-GPIO.setup(EMISOR_PIN, GPIO.OUT)
-GPIO.setup(RECEPTOR_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(RELAY1_PIN, GPIO.OUT)
+GPIO.setup(EMISOR1_PIN, GPIO.OUT)
+GPIO.setup(RECEPTOR1_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(RELAY2_PIN, GPIO.OUT)
+GPIO.setup(EMISOR2_PIN, GPIO.OUT)
+GPIO.setup(RECEPTOR2_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-GPIO.output(RELAY_PIN, GPIO.HIGH)
-GPIO.output(EMISOR_PIN, GPIO.LOW)
+GPIO.output(RELAY1_PIN, GPIO.HIGH)
+GPIO.output(EMISOR1_PIN, GPIO.LOW)
+GPIO.output(RELAY2_PIN, GPIO.HIGH)
+GPIO.output(EMISOR2_PIN, GPIO.LOW)
 
-def activar_rele():
-    print("Esperando 4 segundos antes de activar el relé")
-    time.sleep(4)
-    print("Activando relé por 1 segundo")
-    GPIO.output(RELAY_PIN, GPIO.LOW)
-    time.sleep(1)
-    print("Desactivando relé")
-    GPIO.output(RELAY_PIN, GPIO.HIGH)
 
-def enviar_get_request():
-    try:
-        # URL del archivo PHP
-        url = 'http://192.168.101.30/linea6/linea6.php?status=true'  # Reemplaza con la URL correcta
-        response = requests.get(url)
-        if response.status_code == 200:
-            print("Solicitud GET exitosa")
-        else:
-            print(f"Error en la solicitud GET: {response.status_code}")
-    except Exception as e:
-        print(f"Error al enviar la solicitud GET: {e}")
 
-while True:
-    try:
-        GPIO.output(RELAY_PIN, GPIO.HIGH)
-        GPIO.output(EMISOR_PIN, GPIO.LOW)
 
-        print("Iniciando el bucle principal del script")
-        while True:
-            GPIO.output(EMISOR_PIN, GPIO.HIGH)
+def enviar_mensaje_linea(mensaje,IP_DESTINO,PUERTO_DESTINO):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.sendto(mensaje.encode(), (IP_DESTINO, PUERTO_DESTINO))
+    time.sleep(0.5)
+    sock.close()
 
-            if GPIO.input(RECEPTOR_PIN) == GPIO.HIGH:
-                print("Contacto detectado, activando temporizador")
-                enviar_get_request()  # Enviar solicitud GET al archivo PHP
-                activar_rele()
-            else:
-                print("Esperando contacto...")
+def activar_rele(pin_rele):
+    print(f"Esperando 4 segundos antes de activar el relé en el pin {pin_rele}")
+    time.sleep(5)
+    print(f"Activando relé en pin {pin_rele} por 1 segundo")
+    GPIO.output(pin_rele, GPIO.LOW)
+    time.sleep(1.2)
+    print(f"Desactivando relé en pin {pin_rele}")
+    GPIO.output(pin_rele, GPIO.HIGH)
 
-            time.sleep(1)
 
-    except Exception as e:
-        print(f"Error detectado: {e}. Reiniciando el bucle...")
-    except KeyboardInterrupt:
-        print("Interrupción del programa. Limpiando configuración GPIO.")
-        break
-    finally:
-        GPIO.cleanup()
+def controlar_rele1():
+
+    while True:
+        GPIO.output(EMISOR1_PIN, GPIO.HIGH)
+        if GPIO.input(RECEPTOR1_PIN) == GPIO.HIGH:
+            time.sleep(0.05)
+            if GPIO.input(RECEPTOR1_PIN) == GPIO.HIGH:
+                print("Se activó la señal en Receptor 1, activando relé 1")
+                enviar_mensaje_linea('linea2','192.168.101.37',12345)
+                time.sleep(0.5)
+                activar_rele(RELAY1_PIN)
+
+        time.sleep(0.1)
+
+def controlar_rele2():
+    while True:
+        GPIO.output(EMISOR2_PIN, GPIO.HIGH)
+        if GPIO.input(RECEPTOR2_PIN) == GPIO.HIGH:
+            time.sleep(0.05)
+            if GPIO.input(RECEPTOR2_PIN) == GPIO.HIGH:
+                print("Se activó la señal en Receptor 2, activando relé 2")
+                enviar_mensaje_linea('linea1','192.168.101.52',12345)
+                time.sleep(0.5)
+                activar_rele(RELAY2_PIN)
+
+
+        time.sleep(0.1)
+
+def main():
+    hilo_rele1 = threading.Thread(target=controlar_rele1)
+    hilo_rele2 = threading.Thread(target=controlar_rele2)
+
+    hilo_rele1.start()
+    hilo_rele2.start()
+
+    hilo_rele1.join()
+    hilo_rele2.join()
+
+if _name_ == "_main_":
+    main()
