@@ -81,5 +81,5 @@ def main():
     hilo_rele1.join()
     hilo_rele2.join()
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
