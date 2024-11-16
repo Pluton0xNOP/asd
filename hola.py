@@ -35,7 +35,7 @@ def enviar_mensaje_linea(mensaje,IP_DESTINO,PUERTO_DESTINO):
 
 def activar_rele(pin_rele):
     print(f"Esperando 4 segundos antes de activar el relé en el pin {pin_rele}")
-    time.sleep(5)
+    time.sleep(2.5)
     print(f"Activando relé en pin {pin_rele} por 1 segundo")
     GPIO.output(pin_rele, GPIO.LOW)
     time.sleep(1.2)
